@@ -38,7 +38,10 @@ function download_gff() {
     fi
 
     # Create version of GFF with only gene entries and not FASTA sequence
-    strip_fasta "${outdir}/${gff_filename}"
+    # Does not appear to be necessary for recent versions of EuPathDB.
+    if grep --quiet '^##FASTA' ${outdir}/${gff_filename}; then
+        strip_fasta "${outdir}/${gff_filename}"
+    fi
 }
 
 #
