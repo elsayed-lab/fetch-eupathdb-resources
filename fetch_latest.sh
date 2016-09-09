@@ -76,12 +76,38 @@ function download_fasta() {
     protein_fasta_filename="${fasta_prefix}_AnnotatedProteins.fasta"
     protein_fasta_url="${url_prefix}/${protein_fasta_filename}"
 
-    # Genome FASTA
     echo "Checking for $protein_fasta_filename"
 
     if [ ! -e "${outdir}/${protein_fasta_filename}" ]; then
         echo "Downloading ${protein_fasta_filename}"
         wget -P ${outdir} ${protein_fasta_url}
+    fi
+
+    # Annotated CDSs
+    cds_fasta_filename="${fasta_prefix}_AnnotatedCDSs.fasta"
+    cds_fasta_url="${url_prefix}/${cds_fasta_filename}"
+
+    echo "Checking for $cds_fasta_filename"
+
+    if [ ! -e "${outdir}/${cds_fasta_filename}" ]; then
+        echo "Downloading ${cds_fasta_filename}"
+        wget -P ${outdir} ${cds_fasta_url}
+    fi
+
+    # For L. major Friedlin, replace N's found in two CDS's:
+    # LmjF.12.0867 and LmjF.11.0675; replacements based on LmjF RNA-Seq data
+    # generated in the lab (Sept 09, 2016)
+    if [[ "${eupathdb_name}" == "LmajorFriedlin" ]]; then
+        # LmjF.11.0675 (LmjF.11:272,535)
+        # looks like a possible misassembly (break in coverage); only read that
+        # mapped there at a glance had a C so using that as a placeholder for
+        # now
+        sed -i 's/CCNGACGC/CCCGACGC/' ${cds_fasta_filename}
+
+        # LmjF.12.0867 (LmjF.12:406,469)
+        # Also appears to be a misassembly (no coverage at all). Using C as a
+        # generic placeholder; good enough for computing CAI statistics, etc.
+        sed -i 's/TGGGNAGA/TGGGCAGA/' ${cds_fasta_filename}
     fi
 }
 
@@ -137,7 +163,6 @@ function fetch_latest() {
     root_url=$3
     file_prefix=$4
 
-    #download_fasta
     download_fasta
     download_gff
     download_txt "Gene"
@@ -146,10 +171,12 @@ function fetch_latest() {
 }
 
 # Fetch latest versions of EuPathDB annotations for specified species
+fetch_latest 'LbraziliensisMHOMBR75M2904' 'lbraziliensis' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'LmajorFriedlin' 'lmajor_friedlin' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'TcruziCLBrener' 'tcruzi_clbrener' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'TcruziCLBrenerEsmeraldo-like' 'tcruzi_clbrener_esmeraldo-like' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'TcruziCLBrenerNon-Esmeraldo-like' 'tcruzi_clbrener_nonesmeraldo-like' $tritrypdb_root_url $tritrypdb_prefix
+fetch_latest 'TcruziDm28c' 'tcruzi_dm28c' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'TbruceiTREU927' 'tbrucei_treu927' $tritrypdb_root_url $tritrypdb_prefix
 fetch_latest 'TgondiiME49' 'tgondii_me49' $toxodb_root_url $toxodb_prefix
 fetch_latest 'TcruziSylvioX10-1' 'tcruzi_sylvio' $tritrypdb_root_url $tritrypdb_prefix
